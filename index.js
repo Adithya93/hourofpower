@@ -2,7 +2,9 @@ var express = require("express");
 var embed = require("embed-video");
 var app = express();
 
-app.listen(3000);
+//app.listen(3000);
+
+app.listen(process.env && process.env.NODE_ENV == 'PRODUCTION'? process.env.PORT : 3000);
 var VIDEO_ID = "B3vqcbJwgCI";
 
 app.get("/", function(req, res) {
