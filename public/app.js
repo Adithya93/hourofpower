@@ -3,8 +3,14 @@ $('button#startTimer').on('click', function() {
 	startTimer();
 });
 
+$('button#changeVideo').on('click', function() {
+	changeVideo();
+});
+
 // Global timer of seconds since start of button-press
 var seconds = 0; 
+var YOUTUBE_WATCH_PREFIX = "https://www.youtube.com/watch?v=";
+var YOUTUBE_EMBED_PREFIX = "//www.youtube.com/embed/";
 
 function startTimer() {
 	alert('TIMER STARTING');
@@ -27,6 +33,12 @@ function updateTime() {
 	if (seconds < 3600) {
 		setTimeout(updateTime, 1000);
 	}
+}
+
+function changeVideo() {
+	var videoURL = prompt("Please enter a valid YouTube URL");
+	var videoID = videoURL.replace(YOUTUBE_WATCH_PREFIX, YOUTUBE_EMBED_PREFIX);
+	$('iframe')[0].src = videoID;
 }
 
 // Beep-Generation code from Stack Overflow

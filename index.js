@@ -25,6 +25,10 @@ app.get("/", function(req, res) {
 	});
 });
 
+app.get("/custom", function(req, res) {
+	res.sendFile(__dirname + '/views/index.html');
+});
+
 app.get("/script", function(req, res) {
 	res.sendFile(__dirname + '/public/app.js');
 });
