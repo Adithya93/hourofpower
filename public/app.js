@@ -38,7 +38,19 @@ function updateTime() {
 function changeVideo() {
 	var videoURL = prompt("Please enter a valid YouTube URL");
 	var videoID = videoURL.replace(YOUTUBE_WATCH_PREFIX, YOUTUBE_EMBED_PREFIX);
+	var justID = videoURL.replace(YOUTUBE_WATCH_PREFIX, "");
 	$('iframe')[0].src = videoID;
+	// Make post request to server for saving to DB
+	console.log("Posting videoID to server for updating of recentVideos");
+	$.ajax({
+	  type: "POST",
+	  url: "/videoChosen/" + justID,
+	  success: function(data, textStatus, jqXHR) {
+	  	console.log("Successfully posted choice of videoID " + justID + " to server");
+	  	console.log("Server returned data : " + data);
+	  	console.log("Server returned statusCode of " + textStatus);
+	  }
+	});
 }
 
 // Beep-Generation code from Stack Overflow
