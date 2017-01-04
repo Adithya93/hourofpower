@@ -60,10 +60,16 @@ app.get("/recent/:num", function(req, res) {
 			}
 			else {
 				console.log("Videos successfully retrieved: " + result);
+				
 				res.json(result);
+				//res.sendFile(__dirname + '/views/recent.html');
 			}
 		});
 	}
+});
+
+app.get("/recentVideos", function(req, res) {
+	res.sendFile(__dirname + '/views/recent.html');
 });
 
 // Save ID of recently viewed to DB
@@ -79,6 +85,10 @@ app.post("/videoChosen/:videoID", function(req, res) {
 			res.sendStatus(200); // TO-DO : Redirect to root or navigate to some meaningful page
 		}
 	});
+});
+
+app.get("/recentDisplayScript", function(req, res) {
+	res.sendFile(__dirname + "/public/recentDisplay.js");
 });
 
 // Should refactor all DB-related methods into db.js and require "/db.js"
