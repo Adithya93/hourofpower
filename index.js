@@ -12,7 +12,7 @@ app.listen(production ? process.env.PORT : 3000);
 var VIDEO_ID = "B3vqcbJwgCI";
 var YOUTUBE_PREFIX = "//www.youtube.com/embed/";
 
-var MONGO_URL = production ? process.env.MONGO_URL : "mongodb://127.0.0.1:27017";
+var MONGO_URL = production ? process.env.MONGODB_URI : "mongodb://127.0.0.1:27017";
 
 var myDB;
 
