@@ -7,8 +7,15 @@
 		<p>Search for YouTube Videos</p>
 		<input id="videoSearch">
 		<button id="submitQuery">Submit</button>
-		<ul id="thumbnails"></ul>
-		<button id="clearResults" style="display:none">Clear Results</button>
+		<div id="candidates">
+			<ul id="thumbnails"></ul>
+			<button id="clearResults" style="display:none">Clear Results</button>
+		</div>
+		<div id="nominated">
+			<p id="selectedVideos" style="dislay:none">You have selected the following videos</p>
+			<ul id="nominee-thumbnails"></ul>
+		</div>
+		<button id ="confirm" style="display:none">Confirm Selection</button>
 		<script src="/videoSearchScript"></script>
 	</body>
 </html>
