@@ -91,6 +91,14 @@ app.get("/recentDisplayScript", function(req, res) {
 	res.sendFile(__dirname + "/public/recentDisplay.js");
 });
 
+app.get("/searchVideos", function(req, res) {
+	res.sendFile(__dirname + '/views/search.html');
+});
+
+app.get("/videoSearchScript", function(req, res) {
+	res.sendFile(__dirname + "/public/search.js");
+});
+
 // Should refactor all DB-related methods into db.js and require "/db.js"
 function reconnectDB() {
 	console.log("Attempting to reconnect to MongoDB at " + (new Date()).toString());
