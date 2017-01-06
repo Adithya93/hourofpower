@@ -103,34 +103,64 @@ app.get("/videoSearchScript", function(req, res) {
 });
 
 app.post("/videosConfirmed", function(req, res) {
-
 	console.log("Post request received to videosConfirmed. Body is: ");
 	console.log(JSON.stringify(req.body));
 	// Generate a token
 	var hashKey = getSHA256HexHash(JSON.stringify(req.body['videos']));
 	console.log("Hash key is " + hashKey);
-
 	// Save token to DB with videos and startTimes
-
-	//res.sendFile(__dirname + "/views/startChallenge.html")
-
-	// Send that token over to the client
-	res.send(hashKey);
+	saveChallenge(hashKey, req.body['videos'], function(err, result) {
+		if (err) {
+			console.log("Error saving challenges to database: " + err);
+			res.sendStatus(501);
+		}
+		else {
+			// Send that token over to the client
+			res.send(hashKey);
+		}
+	});
 });
 
 app.get("/start/:token", function(req, res) {
 	// Authenticate token against DB and retrieve list of videos and startTimes
 	console.log("Token is " + req.params.token);
-
-
-	// Send file
-	//res.sendFile(__dirname + "/views/start.ejs"); // TO-DO : Implement
-	res.sendFile(__dirname + "/views/start.html");
+	console.log("Verifying token against DB");
+	retrieveChallenge(req.params.token, function(err, result) {
+		if (err) {
+			console.log("Error retrieving challenges for this token: " + err);
+			// This means server/DB error
+			res.sendStatus(501);
+		}
+		else if (result.length == 0) {
+			console.log("No videos found for this token " + req.params.token);
+			res.sendStatus(404); // Or 401 since it's not 'authorized' in a sense?
+		}
+		else {
+			console.log("Successfully retrieved challenges for token " + req.params.token + " : " + JSON.stringify(result[0]['videos']));
+			//res.json(result[0]['videos']); // TEMP, REPLACE WITH EJS RENDERING SOON
+			// Send file	
+			ejs.renderFile(__dirname + "/views/start.ejs", {videos: result[0]['videos']}, function(err, str) {
+				if (err) {
+					console.log("Error rendering startChallenge page: " + err);
+					res.sendStatus(501);
+				}
+				else {
+					console.log("Rendering successful");
+					res.send(str);
+				}
+			});
+		}
+	});
+	//res.sendFile(__dirname + "/views/start.html");
 });
 
 app.post("/start", function(req, res) {
 	console.log("Post request received to /start : " + JSON.stringify(req.body));
 	res.redirect("/start/" + req.body.token);
+});
+
+app.get("/startScript", function(req, res) {
+	res.sendFile(__dirname + "/public/start.js");
 });
 
 // For hashing
@@ -194,4 +224,32 @@ function retrieveVideos(numVideos, callback) {
 	});
 	console.log("Retrieval of videoIDs in progress...");
 }
+
+function saveChallenge(hashKey, videos, callback) {
+	var challenges = myDB.collection('challenges');
+	challenges.insert({'token': hashKey, 'videos': videos}, function(err, reply) {
+		if (err) {
+			console.log("Error saving challenge token and videos to DB : " + err);
+			callback(err, null);
+		}
+		else {
+			console.log("Successfully saved token and videos to DB");
+			callback(null, reply);
+		}
+	});
+}
+
+function retrieveChallenge(token, callback) {
+	var challenges = myDB.collection('challenges');
+	challenges.find({'token':token}).limit(1).toArray(function(err, result) {
+		if (err) {
+			console.log("Error retrieving challenge for token " + token + " : " + err);
+			callback(err, null);
+		}
+		else {
+			console.log("Successfully retrieved tokens from DB for token " + token + " : " + JSON.stringify(result));
+			callback(null, result);
+		}
+	});
+} 
 

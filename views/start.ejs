@@ -1,0 +1,24 @@
+<html>
+	<title>Hour of Power | Start Challenge</title>
+	<head>
+		<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+	</head>
+	<body style='background-color:black'>
+		<p style='display:block;color:blue;margin:auto;width:50%;text-align:center'>All is fair in love and beer.</p>
+		<div id="player" style='margin:auto;width:90%;height:90%'></div>
+		<div id='video' style='margin:auto;width:95%;height:5%'>
+			<button id='startTimer' style='display:none;color:purple;margin:auto;width:50%'>Start Timer</button>
+			<p id='time' style='display:block;margin:auto;width:50%;text-align:center;color:white'></p>
+			<p id='drinkText' style='display:block;color:black;margin:auto;width:50%;text-align:center'></p>
+		</div>
+		<ul id="videos" style="display:none">
+			<% for (var i = 0; i < videos.length; i++) {%>
+   				<li>
+   					<p class="videoID"><%= videos[i][0] %></p>
+   					<p class="startTime"><%= videos[i][1] %></p>
+			<% } %>
+		</ul>
+		<script src='/startScript'></script>
+		<footer style='float:bottom;margin:auto;width:50%;top:0;bottom:0;text-align:center;bottom:0;color:green'>Brought to you by Manish Nair</footer>
+	</body>
+</html>

@@ -1,8 +1,10 @@
 // DELETE BEFORE PUSHING TO GITHUB
 var YOUTUBE_SEARCH_PREFIX = "REDACTED";
 var YOUTUBE_EMBED_PREFIX = "//www.youtube.com/embed/";
-var NUM_RESULTS = 5;
-var VIDEO_LIMIT = 3;
+var NUM_RESULTS = 10;
+var VIDEO_LIMIT = 5;
+
+var MAX_RESULTS_PER_ROW = 5;
 
 var selectedVideos = [];
 var appendTargets = [$('ul#thumbnails'), $('ul#nominee-thumbnails')];
@@ -59,7 +61,8 @@ function launchQuery(queryString) {
 	  	console.log(data);
 	  	var resultsList = data["items"];
 	  	console.log("Number of results : " + resultsList.length);
-	  	widthPercentage = parseInt(100/NUM_RESULTS) - 1;
+	  	//widthPercentage = parseInt(100/NUM_RESULTS) - 1;
+	  	widthPercentage = parseInt(100/MAX_RESULTS_PER_ROW) - 1;
 	  	resultsList.forEach(function(result) {
 	  		var videoID = result["id"]["videoId"];
 	  		console.log("VideoID of search result is " + videoID);
