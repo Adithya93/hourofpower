@@ -1,10 +1,15 @@
-var express = require("express");
-var embed = require("embed-video");
-var ejs = require("ejs");
+var express = require('express');
+var embed = require('embed-video');
+var ejs = require('ejs');
 var mongoDB = require('mongodb');
+var bodyParser = require('body-parser');
+var crypto = require('crypto');
+
 var MongoClient = mongoDB.MongoClient;
 
 var app = express();
+
+app.use(bodyParser.urlencoded({ extended: true }))
 
 var production = process.env && process.env.NODE_ENV == 'PRODUCTION';
 
@@ -59,10 +64,8 @@ app.get("/recent/:num", function(req, res) {
 				res.sendStatus(501);
 			}
 			else {
-				console.log("Videos successfully retrieved: " + result);
-				
+				console.log("Videos successfully retrieved: " + result);				
 				res.json(result);
-				//res.sendFile(__dirname + '/views/recent.html');
 			}
 		});
 	}
@@ -98,6 +101,44 @@ app.get("/searchVideos", function(req, res) {
 app.get("/videoSearchScript", function(req, res) {
 	res.sendFile(__dirname + "/public/search.js");
 });
+
+app.post("/videosConfirmed", function(req, res) {
+
+	console.log("Post request received to videosConfirmed. Body is: ");
+	console.log(JSON.stringify(req.body));
+	// Generate a token
+	var hashKey = getSHA256HexHash(JSON.stringify(req.body['videos']));
+	console.log("Hash key is " + hashKey);
+
+	// Save token to DB with videos and startTimes
+
+	//res.sendFile(__dirname + "/views/startChallenge.html")
+
+	// Send that token over to the client
+	res.send(hashKey);
+});
+
+app.get("/start/:token", function(req, res) {
+	// Authenticate token against DB and retrieve list of videos and startTimes
+	console.log("Token is " + req.params.token);
+
+
+	// Send file
+	//res.sendFile(__dirname + "/views/start.ejs"); // TO-DO : Implement
+	res.sendFile(__dirname + "/views/start.html");
+});
+
+app.post("/start", function(req, res) {
+	console.log("Post request received to /start : " + JSON.stringify(req.body));
+	res.redirect("/start/" + req.body.token);
+});
+
+// For hashing
+function getSHA256HexHash(input) {
+	var hash = crypto.createHash('sha256');
+	hash.update(input);
+	return hash.digest('hex');
+}
 
 // Should refactor all DB-related methods into db.js and require "/db.js"
 function reconnectDB() {

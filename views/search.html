@@ -15,7 +15,13 @@
 			<p id="selectedVideos" style="dislay:none">You have selected the following videos</p>
 			<ul id="nominee-thumbnails"></ul>
 		</div>
-		<button id ="confirm" style="display:none">Confirm Selection</button>
+		<div id="post-confirmation" style="margin:auto;width:50%;height:50%">
+			<button id ="confirm" style="display:none;color:green;margin:auto;width:50%;text-align:center">Confirm Selection</button>
+			<form id="submitVideos" method="post" action="/start">
+				<input id="tokenPayload" name="token" value="" style="display:none"/>
+				<button id="startChallenge" tpye="submit" style="display:none;color:blue;margin:auto;width:50%;text-align:center" formmethod="post">Start Challenge!</button>
+			</form>
+		</div>
 		<script src="/videoSearchScript"></script>
 	</body>
 </html>

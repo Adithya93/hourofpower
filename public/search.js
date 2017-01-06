@@ -1,11 +1,13 @@
 // DELETE BEFORE PUSHING TO GITHUB
-var YOUTUBE_SEARCH_PREFIX = "https://www.googleapis.com/youtube/v3/search?key=AIzaSyBzA98Lw9KXVYYMdCeOb5ylV2tp-o6AOTQ&part=snippet&maxResults=5&type=video&videoEmbeddable=true&q=";
+var YOUTUBE_SEARCH_PREFIX = "REDACTED";
 var YOUTUBE_EMBED_PREFIX = "//www.youtube.com/embed/";
 var NUM_RESULTS = 5;
 var VIDEO_LIMIT = 3;
 
 var selectedVideos = [];
 var appendTargets = [$('ul#thumbnails'), $('ul#nominee-thumbnails')];
+
+var startToken;
 
 hideSelectedText(); // Needed when no videos have been selected yet
 
@@ -38,6 +40,12 @@ function registerRemoveButtonEventHandler() {
 		removeVideoFromList(this.id);
 	});
 }
+
+$('button#confirm').on('click', function() {
+	console.log("Confirming selection!");
+	console.log("Confirmed videoIDs are " + JSON.stringify(selectedVideos));
+	confirmSelection();
+});
 
 function launchQuery(queryString) {
 	clearResults(); // CHOOSE TO CLEAR NON-SELECTED RESULTS FROM PREVIOUS SEARCH UPON NEW QUERY
@@ -112,7 +120,15 @@ function clearResults() {
 function saveVideoToList(videoID) {
 	if (selectedVideos.length == VIDEO_LIMIT) alert("Video limit of " + VIDEO_LIMIT + " videos reached. Please remove some to add further.");
 	else {
-		selectedVideos.push(videoID);
+
+		var startTime;
+		while (isNaN(parseInt(startTime))) {
+			startTime = prompt("At what time in seconds from the start of the video would you like to commence playback of this video?");
+			console.log("User chose startTime of " + startTime + " for videoID " + videoID);
+		}
+
+		selectedVideos.push([videoID, parseInt(startTime)]);
+
 		console.log("Selected videos: " + JSON.stringify(selectedVideos));
 		$('li#wrapper-' + videoID)[0].parentNode.removeChild($('li#wrapper-' + videoID)[0]);
 		displaySelectedText();
@@ -124,7 +140,7 @@ function saveVideoToList(videoID) {
 } 
 
 function removeVideoFromList(videoID) {
-	var removeIndex = selectedVideos.findIndex(function(x){return x == videoID});
+	var removeIndex = selectedVideos.findIndex(function(x){return x[0] == videoID});
 	if (removeIndex == -1) {
 		console.log("Trying to remove non-existent item from list, bug spotted!");
 		return -1;
@@ -137,6 +153,24 @@ function removeVideoFromList(videoID) {
 	return removeIndex;
 }
 
+function confirmSelection() {
+	console.log("Making POST request for saving videos");
+	$.ajax({
+	  type: "POST",
+	  url: "/videosConfirmed",
+	  data: {'videos': selectedVideos},
+	  success: function(receivedData, textStatus, jqXHR) {
+	  	console.log("Successfully posted videoIDs " + JSON.stringify(selectedVideos) + " to server");
+	  	console.log("Server returned data : " + receivedData);
+	  	console.log("Server returned statusCode of " + textStatus);
+	  	startToken = receivedData;
+	  	displayStartChallengeButton();
+	  	// Add token to href of button
+	  	$('input#tokenPayload')[0].value = startToken;
+	  }
+	});
+}
+
 function displaySelectedText() {
 	console.log("DISPLAYING SELECTED TEXT PARA");
 	$('p#selectedVideos')[0].style.display = "";
@@ -147,9 +181,13 @@ function hideSelectedText() {
 }
 
 function displayConfirmButton() {
-	$('button#confirm')[0].style.display = "";
+	$('button#confirm')[0].style.display = "block";
 }
 
 function hideConfirmButton() {
 	$('button#confirm')[0].style.display = "none";	
+}
+
+function displayStartChallengeButton() {
+	$('button#startChallenge')[0].style.display = "block";
 }
