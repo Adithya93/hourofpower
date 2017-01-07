@@ -68,6 +68,7 @@
       function onPlayerStateChange(event) {
         if (event.data == YT.PlayerState.PLAYING && !done) {
           console.log("Playing video " + currentVideo);
+          alignTimings();
           updateCurrentVideoNumber();
         }
         else if (event.data == YT.PlayerState.ENDED && !done) { // current video has played for its allotted time
@@ -163,13 +164,13 @@
 
       function startTimer() {
         timerInProgress = true;
-        alert('TIMER STARTING');
+        //alert('TIMER STARTING');
         updateTime();
       }
 
       function pauseTimer() {
         timerInProgress = false;
-        alert('PAUSING TIMER');
+        //alert('PAUSING TIMER');
       }
 
       function stopTimer() {
@@ -196,6 +197,26 @@
           if (timerInProgress) {
             setTimeout(updateTime, 1000);
           }
+        }
+      }
+
+      function alignTimings() {
+        var idealTiming = currentVideoNumber  * VIDEO_TIME;
+        var actualTiming = seconds;
+        if (idealTiming > actualTiming) { // video ahead of timer
+          // Pause video until timer catches up
+          console.log("Pausing video until timer catches up");
+          player.pauseVideo();
+          setTimeout(function() {
+            console.log("Timer has caught up, resuming video");
+            player.playVideo();
+          }, idealTiming - actualTiming);
+        }
+        else if (actualTiming > idealTiming) { // timer ahead of video
+          // Pause timer until video catches up
+          console.log("Pausing timer until video catches up");
+          pauseTimer();
+          setTimeout(startTimer, actualTiming - idealTiming);
         }
       }
 
