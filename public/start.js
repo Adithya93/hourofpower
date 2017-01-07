@@ -7,12 +7,32 @@
  var TOTAL_VIDEOS = 5;
  var VIDEO_TIME = 30;
 
+
+ var LAG_FACTOR = 2;
+ var PLAY_TIME = VIDEO_TIME - LAG_FACTOR;
+
  var finishedCueing = 0;
+ var currentVideoNumber = 0;
+
+ var timerInProgress = false;
 
  loadVideos();
+ var started = false;
+
  $('button#startTimer').on('click', function() {
-  startFirstVideo();
-  startTimer();
+  if (!started) {
+    started = true;
+    startFirstVideo();
+    this.textContent = "Pause Timer";
+  }
+  if (timerInProgress) { 
+    pauseTimer();
+    this.textContent = "Resume Timer";
+  }
+  else {
+    startTimer();
+    this.textContent = "Pause Timer";
+  }
  });
  // From YouTube Iframe Player API
       var tag = document.createElement('script');
@@ -48,6 +68,7 @@
       function onPlayerStateChange(event) {
         if (event.data == YT.PlayerState.PLAYING && !done) {
           console.log("Playing video " + currentVideo);
+          updateCurrentVideoNumber();
         }
         else if (event.data == YT.PlayerState.ENDED && !done) { // current video has played for its allotted time
           if (finishedCueing == currentVideo + 1) {
@@ -55,6 +76,7 @@
             if (currentVideo == TOTAL_VIDEOS - 1) {
               done = true;
               stopVideo();
+              stopTimer();
             }
             else {
               console.log("Current value of currentVideo: " + currentVideo + "; calling prepareVideo()");
@@ -109,7 +131,8 @@
         console.log("Cueing first video");
         player.cueVideoById({videoId:videos[0][0],
           startSeconds:parseInt(videos[0][1]),
-          endSeconds:parseInt(videos[0][1]) + VIDEO_TIME,
+          //endSeconds:parseInt(videos[0][1]) + VIDEO_TIME,
+          endSeconds:parseInt(videos[0][1]) + PLAY_TIME,
           suggestedQuality:'large'});
       }
 
@@ -123,8 +146,15 @@
         console.log("Cueing video " + currentVideo);
         player.cueVideoById({videoId:videos[currentVideo][0],
           startSeconds:parseInt(videos[currentVideo][1]),
-          endSeconds:parseInt(videos[currentVideo][1]) + VIDEO_TIME,
+          //endSeconds:parseInt(videos[currentVideo][1]) + VIDEO_TIME,
+          endSeconds:parseInt(videos[currentVideo][1]) + PLAY_TIME,
+
           suggestedQuality:'large'});
+      }
+
+      function updateCurrentVideoNumber() {
+        currentVideoNumber ++;
+        $('p#currentVideoNum').text("Now Playing Video No. " + currentVideoNumber);
       }
 
       function showStartButton() {
@@ -132,11 +162,24 @@
       }
 
       function startTimer() {
+        timerInProgress = true;
         alert('TIMER STARTING');
         updateTime();
       }
 
+      function pauseTimer() {
+        timerInProgress = false;
+        alert('PAUSING TIMER');
+      }
+
+      function stopTimer() {
+        console.log("Stopping timer!");
+        pauseTimer();
+        $('button#startTimer')[0].style.display = "none";
+      }
+
       function updateTime() {
+        if (!timerInProgress) return; // Check on both ends to avoid off-by-one increments
         seconds ++; 
         var secs = seconds % 60; 
         var mins = parseInt(seconds/60); 
@@ -150,9 +193,12 @@
           $('footer').text('Brought to you by Manish Nair');
         }
         if (seconds < 3600) {
-          setTimeout(updateTime, 1000);
+          if (timerInProgress) {
+            setTimeout(updateTime, 1000);
+          }
         }
       }
+
 
       // Beep-Generation code from Stack Overflow
       var audioCtx = new (window.AudioContext || window.webkitAudioContext || window.audioContext); 
