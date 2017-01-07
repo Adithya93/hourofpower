@@ -163,6 +163,7 @@
       }
 
       function startTimer() {
+        if (timerInProgress) return;
         timerInProgress = true;
         //alert('TIMER STARTING');
         updateTime();

@@ -163,6 +163,29 @@ app.get("/startScript", function(req, res) {
 	res.sendFile(__dirname + "/public/start.js");
 });
 
+app.get("/recentChallenges", function(req, res) {
+	console.log("Retrieving information for recent challenges");
+	getRecentChallengeInfo(function(err, data) {
+		if (err) {
+			console.log("Unable to retrieve recent challenge data: " + err);
+			res.sendStatus(501);
+		}
+		else {
+			console.log("Successfully retrieved challenge info");
+			res.json(data);
+		}
+	});
+});
+
+app.get("/viewRecentChallenges", function(req, res) {
+	console.log("Displaying recent challenges page");
+	res.sendFile(__dirname + "/views/recentChallenges.html");
+});
+
+app.get("/recentChallengesScript", function(req, res) {
+	res.sendFile(__dirname + "/public/recentChallenges.js");
+});
+
 // For hashing
 function getSHA256HexHash(input) {
 	var hash = crypto.createHash('sha256');
@@ -252,4 +275,18 @@ function retrieveChallenge(token, callback) {
 		}
 	});
 } 
+
+function getRecentChallengeInfo(callback) {
+	var challenges = myDB.collection('challenges');
+	challenges.find().toArray(function(err, result) {
+		if (err) {
+			console.log("Error retrieving recent challenges info from DB : " + err);
+			callback(err, null);
+		}
+		else {
+			console.log("Successfully retrieved recent challenges from DB: " + JSON.stringify(result));
+			callback(null, result);
+		}
+	});
+}
 
