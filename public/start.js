@@ -11,6 +11,8 @@
  var LAG_FACTOR = 2;
  var PLAY_TIME = VIDEO_TIME - LAG_FACTOR;
 
+ var TOLERANCE_FACTOR = 0;
+
  var finishedCueing = 0;
  var currentVideoNumber = 0;
 
@@ -19,19 +21,24 @@
  loadVideos();
  var started = false;
 
+ var aligned = false;
+ var timeOfLastUpdate = 0;
+
  $('button#startTimer').on('click', function() {
   if (!started) {
     started = true;
     startFirstVideo();
     this.textContent = "Pause Timer";
   }
-  if (timerInProgress) { 
-    pauseTimer();
-    this.textContent = "Resume Timer";
-  }
   else {
-    startTimer();
-    this.textContent = "Pause Timer";
+    if (timerInProgress) { 
+      pauseTimer();
+      this.textContent = "Resume Timer";
+    }
+    else {
+      startTimer();
+      this.textContent = "Pause Timer";
+    }
   }
  });
  // From YouTube Iframe Player API
@@ -68,8 +75,19 @@
       function onPlayerStateChange(event) {
         if (event.data == YT.PlayerState.PLAYING && !done) {
           console.log("Playing video " + currentVideo);
-          alignTimings();
-          updateCurrentVideoNumber();
+          console.log("currentVideoNumber: " + currentVideoNumber);
+          //if (currentVideoNumber == 0) startTimer();
+          if (currentVideoNumber == 0) setTimeout(startTimer, 1000);
+          if (!aligned) {
+            alignTimings();
+          }
+          else {
+            console.log("Return from pause detected at " + seconds + " seconds, not incrementing video number.");
+            console.log("Setting aligned to false");
+            aligned = false;
+          }
+          //updateCurrentVideoNumber();
+          //aligned = false;
         }
         else if (event.data == YT.PlayerState.ENDED && !done) { // current video has played for its allotted time
           if (finishedCueing == currentVideo + 1) {
@@ -145,15 +163,18 @@
       function prepareNextVideo() {
         currentVideo ++;
         console.log("Cueing video " + currentVideo);
+        var chosenPlayTime = currentVideo == TOTAL_VIDEOS - 1 ? VIDEO_TIME : PLAY_TIME;
+        console.log("Chosen play time for video " + (currentVideoNumber + 1) + ": " + chosenPlayTime);
         player.cueVideoById({videoId:videos[currentVideo][0],
           startSeconds:parseInt(videos[currentVideo][1]),
           //endSeconds:parseInt(videos[currentVideo][1]) + VIDEO_TIME,
-          endSeconds:parseInt(videos[currentVideo][1]) + PLAY_TIME,
+          endSeconds:parseInt(videos[currentVideo][1]) + chosenPlayTime,
 
           suggestedQuality:'large'});
       }
 
       function updateCurrentVideoNumber() {
+        console.log("Updating current video number");
         currentVideoNumber ++;
         $('p#currentVideoNum').text("Now Playing Video No. " + currentVideoNumber);
       }
@@ -181,8 +202,17 @@
       }
 
       function updateTime() {
-        if (!timerInProgress) return; // Check on both ends to avoid off-by-one increments
-        seconds ++; 
+        console.log("Trying scheduled update at " + Date.now());
+        if (!timerInProgress) {
+          console.log("Paused timer detected, skipping update");
+          return; // Check on both ends to avoid off-by-one increments
+        }
+        if (Date.now() - timeOfLastUpdate < 900) {
+          console.log("Double updating edge effect detected, skipping update");
+          return;
+        }
+        seconds ++;
+        timeOfLastUpdate = Date.now(); 
         var secs = seconds % 60; 
         var mins = parseInt(seconds/60); 
         var timeStr = mins + ' mins ' + secs + ' secs';
@@ -204,20 +234,34 @@
       function alignTimings() {
         var idealTiming = currentVideoNumber  * VIDEO_TIME;
         var actualTiming = seconds;
-        if (idealTiming > actualTiming) { // video ahead of timer
+        updateCurrentVideoNumber();
+        var delayInSeconds;
+        if (idealTiming > actualTiming + TOLERANCE_FACTOR) { // video ahead of timer
           // Pause video until timer catches up
-          console.log("Pausing video until timer catches up");
+          delayInSeconds = idealTiming - actualTiming;
+          console.log("Pausing video for " + delayInSeconds + " seconds at " + Date.now() + " until timer catches up");
           player.pauseVideo();
+          console.log("Setting aligned to true");
+          aligned = true;
+          console.log("Delay in seconds: " + delayInSeconds);
           setTimeout(function() {
-            console.log("Timer has caught up, resuming video");
+            console.log("Timer has caught up at " + Date.now() + ", resuming video");
             player.playVideo();
-          }, idealTiming - actualTiming);
+          }, delayInSeconds * 1000);
         }
-        else if (actualTiming > idealTiming) { // timer ahead of video
+        else if (actualTiming > idealTiming + TOLERANCE_FACTOR) { // timer ahead of video
           // Pause timer until video catches up
-          console.log("Pausing timer until video catches up");
+          delayInSeconds = actualTiming - idealTiming;
+          console.log("Delay in seconds: " + delayInSeconds);
+          console.log("Pausing timer for " + delayInSeconds + " seconds at " + Date.now() + " until video catches up");
           pauseTimer();
-          setTimeout(startTimer, actualTiming - idealTiming);
+          setTimeout(function() {
+            console.log("Resuming timer at " + Date.now());
+            startTimer();
+          }, delayInSeconds * 1000);
+        }
+        else {
+          console.log("Already aligned, not adjusting");
         }
       }
 
