@@ -1,4 +1,9 @@
 
+//var videosPerRow = 3;
+//var widthPercentage = parseInt(100/videosPerRow) - 1;
+var YOUTUBE_EMBED_PREFIX = "//www.youtube.com/embed/";
+var widthPercentage = 50;
+
 getChallengesData();
 
 function getChallengesData() {
@@ -30,25 +35,49 @@ function appendChallengeThumbnail(challenge) {
 	var tokenPara = document.createElement('p');
 	tokenPara.id = token + "para";
 	tokenPara.textContent = "Challenge token: " + token;
+	tokenPara.style.display = "inline";
 	challengeList.appendChild(tokenPara);
+	var playListLink = document.createElement('a');
+	playListLink.href = "/start/" + token;
+	playListLink.textContent = "Use this playlist";
+	var playListButton = document.createElement('button');
+	playListButton.appendChild(playListLink);
+	playListButton.style.display = "inline";
+	playListButton.style['margin-left'] = 10;
+	challengeList.appendChild(playListButton);
 	var videoBullet;
 	var thumbnail;
 	var timeRange;
 	videos.forEach(function(video) {
 		videoBullet = document.createElement('li');
 		videoBullet.id = token + video[0];
+		/*
 		// Offline at time of writing, use videoID para as placeholder for eventual thumbnail iframe
 		thumbnail = document.createElement('p');
 		// TEMP
 		thumbnail.textContent = "VideoID: " + video[0];
 		//
+		*/
+		thumbnail = getVideoThumbnail(video[0]);
 		timeRange = document.createElement('p');
 		timeRange.textContent = "Time Range Played: " + video[1] + " secs - " + (parseInt(video[1]) + 60) + " secs";
+		timeRange.style.display = "block";
 		videoBullet.appendChild(thumbnail);
 		videoBullet.appendChild(timeRange);
+		videoBullet.appendChild(document.createElement('br'));
 		challengeList.append(videoBullet);
 	});
 	$('ul#challenges')[0].append(challengeList);
 	$('ul#challenges')[0].append(document.createElement('br'));
 	console.log("Appended challenge " + token);
+}
+
+
+function getVideoThumbnail(videoID) {
+	console.log("Retrieving thumbnail for video " + videoID);
+	var newIframe = document.createElement('iframe');
+	newIframe.src = YOUTUBE_EMBED_PREFIX + videoID;
+	newIframe.width = widthPercentage + "%";
+	console.log("Successfully retrieved thumbnail for videoID " + videoID);
+	return newIframe;
 }

@@ -278,7 +278,7 @@ function retrieveChallenge(token, callback) {
 
 function getRecentChallengeInfo(callback) {
 	var challenges = myDB.collection('challenges');
-	challenges.find().toArray(function(err, result) {
+	challenges.find().limit(5).toArray(function(err, result) {
 		if (err) {
 			console.log("Error retrieving recent challenges info from DB : " + err);
 			callback(err, null);
