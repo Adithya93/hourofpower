@@ -5,21 +5,29 @@
 	</head>
 	<body style='background-color:black'>
 		<p style='display:block;color:cyan;margin:auto;width:50%;text-align:center'>All is fair in love and beer.</p>
-		<div id="player" style='margin:auto;width:90%;height:80%'></div>
+		<div id="player" style='margin:auto;width:90%;height:75%'></div>
 		<div id='video' style='margin:auto;width:95%;height:10%'>
 			<button id='startTimer' style='display:none;color:purple;margin:auto;width:50%'>Start Challenge</button>
 			<p id='time' style='display:block;margin:auto;width:50%;text-align:center;color:white'></p>
 			<p id='currentVideoNum' style='display:block;margin:auto;width:50%;text-align:center;color:white'></p>
+			<p id='nextTransition' style='display:block;margin:auto;width:50%;text-align:center;color:white'></p>
 			<p id='drinkText' style='display:block;color:black;margin:auto;width:50%;text-align:center'></p>
 		</div>
-		<ul id="videos" style="display:none">
-			<% for (var i = 0; i < videos.length; i++) {%>
-   				<li>
-   					<p class="videoID"><%= videos[i][0] %></p>
-   					<p class="startTime"><%= videos[i][1] %></p>
-			<% } %>
-		</ul>
+		<div style="display:none;height:0%">
+			<p id="totalVideos"><%= totalVideos %></p>
+			<ul id="videos" style="display:none">
+				<% for (var i = 0; i < videos.length; i++) {%>
+	   				<li>
+	   					<p class="videoID"><%= videos[i][0] %></p>
+	   					<p class="startTime"><%= videos[i][1] %></p>
+	   					<p class="endTime"><%= videos[i][2] %></p>
+				<% } %>
+			</ul>
+		</div>
 		<script src='/startScript'></script>
-		<footer style='float:bottom;margin:auto;width:50%;top:0;bottom:0;text-align:center;bottom:0;color:green'>Brought to you by Manish Nair</footer>
+			<footer style='float:bottom;margin:auto;width:50%;height:10%;top:0;bottom:0;text-align:center;bottom:0;color:green'>
+				<p>Inspired by <a href="/manishNair">Manish Nair</a></p>
+				<p>Built by <a href="https://adithya93.github.io/">Adithya Raghunathan</a></p>
+			</footer>
 	</body>
 </html>

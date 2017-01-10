@@ -1,0 +1,47 @@
+<html>
+	<title>Hour of Power | Search for Videos</title>
+	<head>
+		<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+		<div id="topText">
+			<p style="display:inline">Search for YouTube Videos</p>
+			<ul id="info" style="float:right;display:inline;text-align:left">
+				<li style="list-style:none;display:inline;margin-left:10;margin-right:10">
+					<p id="numSelected" style="display:inline" data="0">Videos Selected: 0</p>
+				</li>
+				<li style="list-style:none;display:inline;margin-left:10;margin-right:10">
+					<p id="numLeft" style="display:inline" data=<%= totalVideos%>>Videos Remaining: <%= totalVideos %></p>
+				</li>
+				<li style="list-style:none;display:inline;margin-left:10;margin-right:10">
+					<p id="secondsUsed" style="display:inline" data="0">Video Time Used (seconds): 0</p>
+				</li>
+				<li style="list-style:none;display:inline;margin-left:10;margin-right:10">
+					<p id="secondsLeft" style="display:inline" data=<%= totalTime * 60 %>>Video Time Remaining (seconds): <%= totalTime * 60 %></p>
+				</li>
+			</ul>
+		</div>
+	</head>
+	<body>
+		<div id="search">
+			<input id="videoSearch">
+			<button id="submitQuery">Submit</button>
+		</div>
+		<div id="candidates">
+			<ul id="thumbnails"></ul>
+			<button id="clearResults" style="display:none">Clear Results</button>
+		</div>
+		<div id="nominated">
+			<p id="selectedVideos" style="dislay:none">You have selected the following videos</p>
+			<ul id="nominee-thumbnails"></ul>
+		</div>
+		<div id="post-confirmation" style="margin:auto;width:50%;height:50%">
+			<button id ="confirm" style="display:none;color:green;margin:auto;width:50%;text-align:center">Confirm Selection</button>
+			<form id="submitVideos" method="post" action="/start">
+				<input id="tokenPayload" name="token" value="" style="display:none"/>
+				<button id="startChallenge" type="submit" style="display:none;color:blue;margin:auto;width:50%;text-align:center" formmethod="post">Start Challenge!</button>
+			</form>
+			<p id="startLater" style="display:none;text-align:center">Want to start later? No problem, just copy and paste the following URL into the browser whenever you're ready!</p>
+			<a id="startLaterLink" href="#" style="display:none;text-align:center"></a>
+		</div>
+		<script src="/videoSearchScript"></script>
+	</body>
+</html>

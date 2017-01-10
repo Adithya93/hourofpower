@@ -4,21 +4,20 @@
  var currentVideo;
 
  var seconds = 0;
- var TOTAL_VIDEOS = 5;
- var VIDEO_TIME = 30;
-
+ 
+ var totalVideos;
+ var cumulativeTimes = [];
 
  var LAG_FACTOR = 2;
- var PLAY_TIME = VIDEO_TIME - LAG_FACTOR;
-
  var TOLERANCE_FACTOR = 0;
+ var ERRATIC_STOP_BUFFER = 4;
 
  var finishedCueing = 0;
  var currentVideoNumber = 0;
-
  var timerInProgress = false;
+ var inTheMiddleOfVideo = false;
 
- loadVideos();
+ loadInfo();
  var started = false;
 
  var aligned = false;
@@ -76,29 +75,45 @@
         if (event.data == YT.PlayerState.PLAYING && !done) {
           console.log("Playing video " + currentVideo);
           console.log("currentVideoNumber: " + currentVideoNumber);
-          //if (currentVideoNumber == 0) startTimer();
+          inTheMiddleOfVideo = true;
+          restoreFooter();
           if (currentVideoNumber == 0) setTimeout(startTimer, 1000);
           if (!aligned) {
             alignTimings();
+            displayTimeOfNextTransition();
           }
           else {
-            console.log("Return from pause detected at " + seconds + " seconds, not incrementing video number.");
+            console.log("Return from pause/buffering/crash detected at " + seconds + " seconds, not incrementing video number.");
             console.log("Setting aligned to false");
             aligned = false;
           }
-          //updateCurrentVideoNumber();
-          //aligned = false;
         }
         else if (event.data == YT.PlayerState.ENDED && !done) { // current video has played for its allotted time
           if (finishedCueing == currentVideo + 1) {
+            // Check for erratic stops
+            var idealEndTime = cumulativeTimes[currentVideo];
+            console.log("Verifying stop... Video should end when cumulative time is " + idealEndTime);
+            if (idealEndTime - seconds > ERRATIC_STOP_BUFFER) {
+              console.log("ERRATIC PREMATURE STOP DETECTED at time of " + seconds + " when end should be at " + idealEndTime + "; IGNORING and REPLAYING");
+              aligned = true;
+              var videoStartTime = currentVideo == 0 ? 0 : cumulativeTimes[currentVideo - 1];
+              var recoveryPosition = parseInt(videos[currentVideo][1]) + seconds - videoStartTime; // the time into this video that the playing should resume 
+              console.log("Seeking to " + recoveryPosition + " seconds into video");
+              //player.playVideo();
+              player.seekTo(recoveryPosition);
+              return;
+            }
+            inTheMiddleOfVideo = false;
             console.log("Finished playing video " + currentVideo);
-            if (currentVideo == TOTAL_VIDEOS - 1) {
+            if (currentVideo == totalVideos - 1) {
               done = true;
               stopVideo();
               stopTimer();
+              displayCompletion();
             }
             else {
               console.log("Current value of currentVideo: " + currentVideo + "; calling prepareVideo()");
+              markTransition();
               prepareNextVideo();
             }
           }
@@ -117,6 +132,17 @@
             player.seekTo(parseInt(videos[currentVideo][1]));
           }
         }
+
+        else if (event.data == YT.PlayerState.BUFFERING) {
+          if (inTheMiddleOfVideo) {
+            console.log("PLAYER IS BUFFERING MID-VIDEO. If returning to playing state from here, should not update video number");
+            aligned = true;
+          }
+          else {
+            console.log("Player is buffering before/in-between videos");
+          }
+        }
+        // TO-DO : Can use autoPause flag + YT.PlayerState.PAUSED to pause timer on manual (user-triggered) pauses
         else {
           console.log("Different state change: " + event.data + "; currentVideo : " + currentVideo);
         }
@@ -127,7 +153,10 @@
         player.stopVideo();
       }
 
-      function loadVideos() {
+      //function loadVideos() {
+      function loadInfo() {  
+        totalVideos = parseInt($('p#totalVideos')[0].textContent);
+        console.log("Total videos : " + totalVideos);
         var infoNodes = $('ul#videos')[0].children;
         var videoInfo;
         var infoNode;
@@ -141,17 +170,20 @@
             videoInfo.push(infoNode[innerIndex].textContent);
           }
           videos.push(videoInfo);
+          var duration = parseInt(videoInfo[2]) - parseInt(videoInfo[1]);
+          cumulativeTimes.push(cumulativeTimes.length == 0 ? duration : duration + cumulativeTimes[cumulativeTimes.length - 1]);
         }
         console.log("Loaded information, videos are " + JSON.stringify(videos));
+        console.log("cumulativeTimes are " + JSON.stringify(cumulativeTimes));
       }
 
       function prepareFirstVideo() {
         currentVideo = 0;
         console.log("Cueing first video");
+        var chosenEndTime = parseInt(videos[0][2]) - LAG_FACTOR;
         player.cueVideoById({videoId:videos[0][0],
           startSeconds:parseInt(videos[0][1]),
-          //endSeconds:parseInt(videos[0][1]) + VIDEO_TIME,
-          endSeconds:parseInt(videos[0][1]) + PLAY_TIME,
+          endSeconds: chosenEndTime,
           suggestedQuality:'large'});
       }
 
@@ -163,13 +195,16 @@
       function prepareNextVideo() {
         currentVideo ++;
         console.log("Cueing video " + currentVideo);
-        var chosenPlayTime = currentVideo == TOTAL_VIDEOS - 1 ? VIDEO_TIME : PLAY_TIME;
-        console.log("Chosen play time for video " + (currentVideoNumber + 1) + ": " + chosenPlayTime);
+        var startTime = parseInt(videos[currentVideo][1]);
+        var endTime = parseInt(videos[currentVideo][2]);
+        var bufferedEndTime = endTime - LAG_FACTOR;
+        var chosenEndTime = currentVideo == totalVideos - 1 ? endTime : bufferedEndTime;
+        console.log("Video's own startTime: " + startTime);
+        console.log("Video's own endTime: " + chosenEndTime);
+        console.log("Chosen play time for video " + (currentVideoNumber + 1) + ": " + (chosenEndTime - startTime));
         player.cueVideoById({videoId:videos[currentVideo][0],
-          startSeconds:parseInt(videos[currentVideo][1]),
-          //endSeconds:parseInt(videos[currentVideo][1]) + VIDEO_TIME,
-          endSeconds:parseInt(videos[currentVideo][1]) + chosenPlayTime,
-
+          startSeconds:startTime,
+          endSeconds:chosenEndTime,
           suggestedQuality:'large'});
       }
 
@@ -186,13 +221,11 @@
       function startTimer() {
         if (timerInProgress) return;
         timerInProgress = true;
-        //alert('TIMER STARTING');
         updateTime();
       }
 
       function pauseTimer() {
         timerInProgress = false;
-        //alert('PAUSING TIMER');
       }
 
       function stopTimer() {
@@ -202,7 +235,6 @@
       }
 
       function updateTime() {
-        console.log("Trying scheduled update at " + Date.now());
         if (!timerInProgress) {
           console.log("Paused timer detected, skipping update");
           return; // Check on both ends to avoid off-by-one increments
@@ -217,14 +249,7 @@
         var mins = parseInt(seconds/60); 
         var timeStr = mins + ' mins ' + secs + ' secs';
         $('p#time').text(timeStr); 
-        if (secs == 0) {
-          $('footer').text('DRINK!');
-          beep(2000, 400, 3, 'square');
-        } 
-        else {
-          $('footer').text('Brought to you by Manish Nair');
-        }
-        if (seconds < 3600) {
+        if (seconds < cumulativeTimes[cumulativeTimes.length - 1]) {
           if (timerInProgress) {
             setTimeout(updateTime, 1000);
           }
@@ -232,7 +257,7 @@
       }
 
       function alignTimings() {
-        var idealTiming = currentVideoNumber  * VIDEO_TIME;
+        idealTiming = currentVideoNumber == 0 ? 0 : cumulativeTimes[currentVideoNumber - 1];
         var actualTiming = seconds;
         updateCurrentVideoNumber();
         var delayInSeconds;
@@ -265,6 +290,31 @@
         }
       }
 
+      function flashFooter() {
+        $('footer').text('DO IT!');
+      }
+
+      function restoreFooter() {
+        $('footer')[0].innerHTML = '<p>Inspired by <a href="/manishNair">Manish Nair</a></p><p>Built by <a href="https://adithya93.github.io/">Adithya Raghunathan</a></p>';
+      }
+
+      function markTransition() {
+        flashFooter();
+        beep(2000, 400, 3, 'square');
+      }
+
+      function displayTimeOfNextTransition() {
+        var nextTransition = cumulativeTimes[currentVideo];
+        var transMins = parseInt(nextTransition / 60);
+        var transSecs = nextTransition % 60;
+        var transText = transMins + " mins " + transSecs + " secs";
+        $('p#nextTransition').text("Next Transition : " + transText);
+      }
+
+      function displayCompletion() {
+        $('p#nextTransition').text("Challenge complete! Congratulations!");
+        $('p#currentVideoNum').text("All " + currentVideoNumber + " videos have been played");
+      }
 
       // Beep-Generation code from Stack Overflow
       var audioCtx = new (window.AudioContext || window.webkitAudioContext || window.audioContext); 

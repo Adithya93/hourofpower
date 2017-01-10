@@ -25,6 +25,8 @@ reconnectDB();
 
 app.get("/", function(req, res) {
 	console.log("Booyakasha");
+	res.redirect("/menu");
+	/*
 	ejs.renderFile(__dirname + "/views/index.ejs", {videoID: YOUTUBE_PREFIX + VIDEO_ID}, function(err, str) {
 		if (err) {
 			console.log("Error rendering : " + err);
@@ -35,6 +37,7 @@ app.get("/", function(req, res) {
 			res.send(str);
 		}
 	});
+*/
 });
 
 app.get("/script", function(req, res) {
@@ -98,6 +101,27 @@ app.get("/searchVideos", function(req, res) {
 	res.sendFile(__dirname + '/views/search.html');
 });
 
+app.get("/search", function(req, res) {
+	console.log("Total videos requested: " + req.query.totalVideos);
+	console.log("Total time requested: " + req.query.totalTime);
+	var constantInterval = req.query.constantInterval != undefined && req.query.constantInterval != null;
+	console.log("Constant Intervals? " + req.query.constantInterval);
+	if (isNaN(parseInt(req.query.totalVideos)) || isNaN(parseInt(req.query.totalTime))) res.sendStatus(404); // additional check
+	else {
+		ejs.renderFile(__dirname + "/views/search.ejs", {totalVideos: parseInt(req.query.totalVideos), totalTime: parseInt(req.query.totalTime), constantInterval: constantInterval}, function(err, str) {
+			if (err) {
+				console.log("Error rendering : " + err);
+				res.sendStatus(501);
+			}
+			else {
+				console.log("Rendering successful");
+				res.send(str);
+			}
+		});	
+	}
+
+});
+
 app.get("/videoSearchScript", function(req, res) {
 	res.sendFile(__dirname + "/public/search.js");
 });
@@ -106,10 +130,11 @@ app.post("/videosConfirmed", function(req, res) {
 	console.log("Post request received to videosConfirmed. Body is: ");
 	console.log(JSON.stringify(req.body));
 	// Generate a token
-	var hashKey = getSHA256HexHash(JSON.stringify(req.body['videos']));
+	//var hashKey = getSHA256HexHash(JSON.stringify(req.body['videos']));
+	var hashKey = getSHA256HexHash(JSON.stringify(req.body['selection']));
 	console.log("Hash key is " + hashKey);
-	// Save token to DB with videos and startTimes
-	saveChallenge(hashKey, req.body['videos'], function(err, result) {
+	// Save token to DB with videos, startTimes and endTimes
+	saveChallenge(hashKey, req.body['selection'], function(err, result) {
 		if (err) {
 			console.log("Error saving challenges to database: " + err);
 			res.sendStatus(501);
@@ -139,7 +164,7 @@ app.get("/start/:token", function(req, res) {
 			console.log("Successfully retrieved challenges for token " + req.params.token + " : " + JSON.stringify(result[0]['videos']));
 			//res.json(result[0]['videos']); // TEMP, REPLACE WITH EJS RENDERING SOON
 			// Send file	
-			ejs.renderFile(__dirname + "/views/start.ejs", {videos: result[0]['videos']}, function(err, str) {
+			ejs.renderFile(__dirname + "/views/start.ejs", {videos: result[0]['videos'], totalVideos: result[0]['numVideos'], totalTime: result[0]['totalTime']}, function(err, str) {
 				if (err) {
 					console.log("Error rendering startChallenge page: " + err);
 					res.sendStatus(501);
@@ -184,6 +209,22 @@ app.get("/viewRecentChallenges", function(req, res) {
 
 app.get("/recentChallengesScript", function(req, res) {
 	res.sendFile(__dirname + "/public/recentChallenges.js");
+});
+
+app.get("/menuScript", function(req, res) {
+	res.sendFile(__dirname + "/public/menuScript.js");
+});
+
+app.get("/backgroundImg", function(req, res) {
+	res.sendFile(__dirname + "/images/backgroundImg.jpg");
+});
+
+app.get("/menu", function(req, res) {
+	res.sendFile(__dirname + "/views/landingPage.html");
+});
+
+app.get("/manishNair", function(req, res) {
+	res.sendFile(__dirname + "/images/manish.jpg");
 });
 
 // For hashing
@@ -248,9 +289,9 @@ function retrieveVideos(numVideos, callback) {
 	console.log("Retrieval of videoIDs in progress...");
 }
 
-function saveChallenge(hashKey, videos, callback) {
+function saveChallenge(hashKey, selection, callback) {
 	var challenges = myDB.collection('challenges');
-	challenges.insert({'token': hashKey, 'videos': videos}, function(err, reply) {
+	challenges.insert({'token': hashKey, 'videos': selection['videos'], 'numVideos':selection['numVideos'], 'totalTime': selection['totalTime']}, function(err, reply) {
 		if (err) {
 			console.log("Error saving challenge token and videos to DB : " + err);
 			callback(err, null);

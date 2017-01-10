@@ -1,0 +1,38 @@
+
+<html>
+	<title>Hour of Power</title>
+	<head style='margin:auto;width:50%'>
+		<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+		<h1 style='color:purple'>Welcome to Power Hour</h1>
+		<h3 style='color:yellow'>Coz <em>*everything</em> is better with music</h3>
+	</head>
+	<body style='background-image:url("/backgroundImg"); background-size:100% 100%;background-repeat:no-repeat;background-color:purple'>
+		<div id='welcome' style='margin:auto;width:50%;height:50%;color:blue;text-align:center'>
+			<p>Workout? Drinking Game? Musical Chairs? Some sequence of timed activities? Make your own playlist to track your progress in style</p>
+			<p>You can mix and match <em>your favorite parts</em> of <em>your favorite videos</em> to create a playlist of <em>your chosen duration</em></p>
+			<p>Forget the complex video editing software. Just search for videos and enter start/end times. Simple as that.</p>
+		</div>
+		<div id='menu' style='margin:auto;width:50%'>
+			<button id='chooseCustom' style='display:inline;margin:auto;width:49%'>
+				<a href="">Create custom challenge playlist</a>
+			</button>
+			<button id='chooseOld' style='display:inline;margin:auto;width:49%'>
+				<a href='/viewRecentChallenges'>Choose from an existing challenge playlist</a>
+			</button>
+		</div>
+		<div id="formWrapper" style="margin:auto;display:none">
+			<form id="customParams" method="get" action="/search" onsubmit="return validateForm()" style="display:block; margin:auto">
+				<p style="display:block; margin:auto;width:50%;text-align:center">Total Videos: <input id="totalVideos" name="totalVideos" value=""></p>
+				<p style="display:block; margin:auto;width:50%;text-align:center">Total Time (mins): <input id="totalTime" name="totalTime" value=""></p>
+				<p style="display:block; margin:auto;width:50%;text-align:center">Fixed Intervals: <input type="checkbox" name="constantInterval" value="true"></p>
+				<p style="display:block; margin:auto;width:50%;text-align:center"><input type="submit" value="Submit"></p>
+			</form>
+		</div>
+		<script src='/menuScript'></script>
+		<footer style='float:bottom;margin:auto;width:50%;top:0;bottom:0;text-align:center;bottom:0;color:orange'>
+			<p>Inspired by <a href="/manishNair">Manish Nair</a></p>
+			<p>Built by <a href="https://adithya93.github.io/">Adithya Raghunathan</a></p>
+			<p style='color:yellow'>*Well, maybe not EVERYthing...</p>
+		</footer>
+	</body>
+</html>

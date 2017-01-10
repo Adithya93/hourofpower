@@ -1,15 +1,37 @@
 // DELETE BEFORE PUSHING TO GITHUB
-var YOUTUBE_SEARCH_PREFIX = "https://www.googleapis.com/youtube/v3/search?key=AIzaSyBzA98Lw9KXVYYMdCeOb5ylV2tp-o6AOTQ&part=snippet&maxResults=10&type=video&videoEmbeddable=true&q=";
+var YOUTUBE_SEARCH_PREFIX = "REDACTED";
 var YOUTUBE_EMBED_PREFIX = "//www.youtube.com/embed/";
-var NUM_RESULTS = 10;
-var VIDEO_LIMIT = 5;
+var NUM_RESULTS = 5;
+//var VIDEO_LIMIT = 5;
 
 var MAX_RESULTS_PER_ROW = 5;
+
+var CONSTANT_INTERVAL = document.URL.indexOf("constantInterval") != -1;
+console.log("Constant Interval? " + CONSTANT_INTERVAL);
+
+var VIDEOS_SELECTED_PREFIX = "Videos Selected: ";
+var VIDEOS_REMAINING_PREFIX = "Videos Remaining: ";
+var SECONDS_USED_PREFIX = "Video Time Used (seconds): ";
+var SECONDS_REMAINING_PREFIX = "Video Time Remaining (seconds): ";
 
 var selectedVideos = [];
 var appendTargets = [$('ul#thumbnails'), $('ul#nominee-thumbnails')];
 
 var startToken;
+
+// retrieve number of videos and total time
+
+var totalVideos = parseInt($('p#numLeft')[0].getAttribute('data'));
+var totalTime = parseInt($('p#secondsLeft')[0].getAttribute('data'));
+var numSelected = parseInt($('p#numSelected')[0].getAttribute('data'));
+var secondsUsed = parseInt($('p#secondsUsed')[0].getAttribute('data'));
+var numLeft = totalVideos;
+var secondsLeft = totalTime;
+
+var VIDEO_LIMIT = totalVideos;
+
+console.log("Total videos: " + totalVideos);
+console.log("Total seconds: " + totalTime);
 
 hideSelectedText(); // Needed when no videos have been selected yet
 
@@ -125,12 +147,34 @@ function saveVideoToList(videoID) {
 	else {
 
 		var startTime;
+		var endTime;
+		if (numLeft == 1 && !CONSTANT_INTERVAL) {
+			alert("This is the last video. Please be sure to choose a duration of " + secondsLeft);
+		}
 		while (isNaN(parseInt(startTime))) {
-			startTime = prompt("At what time in seconds from the start of the video would you like to commence playback of this video?");
+			startTime = prompt("At what time in seconds from the start of the video would you like to START playback?");
 			console.log("User chose startTime of " + startTime + " for videoID " + videoID);
 		}
-
-		selectedVideos.push([videoID, parseInt(startTime)]);
+		startTime = parseInt(startTime);
+		if (!CONSTANT_INTERVAL) {
+			while (isNaN(parseInt(endTime))) {
+				endTime = prompt("At what time in seconds from the start of the video would you like to STOP playback?");
+				console.log("User chose startTime of " + endTime + " for videoID " + videoID);
+			}
+			endTime = parseInt(endTime);
+		}
+		else {
+			endTime = parseInt(totalTime/totalVideos) + startTime;
+		}
+		//endTime = parseInt(endTime);
+		var duration = endTime - startTime;
+		if (secondsUsed + duration > totalTime) {
+			alert("That's too long. Total duration now exceeds your pre-specified total time. Maximum duration you can choose for this video is " + secondsLeft + ". Please select again with valid start and end times");	
+			return;
+		}
+		//selectedVideos.push([videoID, parseInt(startTime)]);
+		selectedVideos.push([videoID, startTime, endTime]);
+		incrVideoCount(duration);
 
 		console.log("Selected videos: " + JSON.stringify(selectedVideos));
 		$('li#wrapper-' + videoID)[0].parentNode.removeChild($('li#wrapper-' + videoID)[0]);
@@ -142,13 +186,39 @@ function saveVideoToList(videoID) {
 	}
 } 
 
+function incrVideoCount(duration) {
+	updateVideoCount(1, duration);
+}
+
+function decrVideoCount(duration) {
+	updateVideoCount(-1, duration);
+}
+
+function updateVideoCount(sign, duration) {
+	numSelected += sign;
+	$('p#numSelected')[0].setAttribute('data', numSelected);
+	$('p#numSelected').text(VIDEOS_SELECTED_PREFIX + numSelected);
+	numLeft -= sign;
+	$('p#numLeft')[0].setAttribute('data', numLeft);
+	$('p#numLeft').text(VIDEOS_REMAINING_PREFIX +  numLeft);
+	secondsUsed += sign * duration;
+	$('p#secondsUsed')[0].setAttribute('data', secondsUsed);
+	$('p#secondsUsed').text(SECONDS_USED_PREFIX + secondsUsed);
+	secondsLeft -= sign * duration;
+	$('p#secondsLeft')[0].setAttribute('data', secondsLeft);
+	$('p#secondsLeft').text(SECONDS_REMAINING_PREFIX +  secondsLeft);
+}
+
 function removeVideoFromList(videoID) {
 	var removeIndex = selectedVideos.findIndex(function(x){return x[0] == videoID});
 	if (removeIndex == -1) {
 		console.log("Trying to remove non-existent item from list, bug spotted!");
 		return -1;
 	}
-	selectedVideos.splice(removeIndex, 1);
+	var removedVideo = selectedVideos.splice(removeIndex, 1)[0];
+	console.log("Removed video is " + JSON.stringify(removedVideo));
+	decrVideoCount(removedVideo[2] - removedVideo[1]);
+
 	console.log("Selected videos: " + JSON.stringify(selectedVideos));
 	$('li#wrapper-'+videoID)[0].parentNode.removeChild($('li#wrapper-' + videoID)[0]);
 	if (selectedVideos.length < VIDEO_LIMIT) hideConfirmButton();
@@ -158,10 +228,12 @@ function removeVideoFromList(videoID) {
 
 function confirmSelection() {
 	console.log("Making POST request for saving videos");
+	console.log("Total videos: " + totalVideos);
+	//console.log("TOTAL_VIDEOS: " + TOTAL_VIDEOS);
 	$.ajax({
 	  type: "POST",
 	  url: "/videosConfirmed",
-	  data: {'videos': selectedVideos},
+	  data: {'selection':{'videos': selectedVideos, 'numVideos': totalVideos, 'totalTime': totalTime}},
 	  success: function(receivedData, textStatus, jqXHR) {
 	  	console.log("Successfully posted videoIDs " + JSON.stringify(selectedVideos) + " to server");
 	  	console.log("Server returned data : " + receivedData);
@@ -196,5 +268,6 @@ function displayStartChallengeButton() {
 	$('p#startLater')[0].style.display = "block";
 	$('a#startLaterLink')[0].style.display = "block";
 	$('a#startLaterLink')[0].href = "/start/" + startToken;
-	$('a#startLaterLink')[0].textContent = document.URL.replace("/searchVideos", "/start/" + startToken);
+	//$('a#startLaterLink')[0].textContent = document.URL.replace("/searchVideos", "/start/" + startToken);
+	$('a#startLaterLink')[0].textContent = (document.URL.substring(0, document.URL.indexOf("/search?")) + "/start/" + startToken);
 }
