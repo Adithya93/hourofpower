@@ -1,5 +1,5 @@
 // DELETE BEFORE PUSHING TO GITHUB
-var YOUTUBE_SEARCH_PREFIX = "REDACTED";
+var YOUTUBE_SEARCH_PREFIX = "https://www.googleapis.com/youtube/v3/search?key=AIzaSyBzA98Lw9KXVYYMdCeOb5ylV2tp-o6AOTQ&part=snippet&maxResults=10&type=video&videoEmbeddable=true&q=";
 var YOUTUBE_EMBED_PREFIX = "//www.youtube.com/embed/";
 var NUM_RESULTS = 5;
 //var VIDEO_LIMIT = 5;
