@@ -21,6 +21,8 @@ var MONGO_URL = production ? process.env.MONGODB_URI : "mongodb://127.0.0.1:2701
 
 var myDB;
 
+var LATEST_CHALLENGES_DISPLAYED = 5;
+
 reconnectDB();
 
 app.get("/", function(req, res) {
@@ -197,7 +199,7 @@ app.get("/recentChallenges", function(req, res) {
 		}
 		else {
 			console.log("Successfully retrieved challenge info");
-			res.json(data);
+			res.json(data.reverse().slice(0, LATEST_CHALLENGES_DISPLAYED));
 		}
 	});
 });
@@ -319,7 +321,8 @@ function retrieveChallenge(token, callback) {
 
 function getRecentChallengeInfo(callback) {
 	var challenges = myDB.collection('challenges');
-	challenges.find().limit(5).toArray(function(err, result) {
+	//challenges.find().limit(5).toArray(function(err, result) {
+	challenges.find().toArray(function(err, result) {
 		if (err) {
 			console.log("Error retrieving recent challenges info from DB : " + err);
 			callback(err, null);
